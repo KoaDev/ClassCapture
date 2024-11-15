@@ -1,7 +1,7 @@
 const admin = require('firebase-admin');
 const dotenv = require('dotenv');
 dotenv.config();
-const serviceAccount = require("../directed-racer-441009-g6-firebase-adminsdk-c11ay-4c6ff3bb7a.json");
+const serviceAccount = require("../firebaseAdmin.json");
 
 
 admin.initializeApp({
