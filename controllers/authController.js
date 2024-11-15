@@ -1,14 +1,11 @@
-const admin = require('../config/firebaseConfig');
+const { bucket } = require('../config/firebaseConfig');
 const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = require('firebase/auth');
 const { initializeApp } = require('firebase/app');
+const firebaseConfig = require("../config/firebaseClient.json");
 
-const firebaseConfig = require("../firebaseClient.json");
-
-// Initialisation de Firebase pour le SDK client (utilisé pour l'authentification)
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 
-// Inscription d'un nouvel utilisateur
 const signupUser = async (req, res) => {
     const { email, password } = req.body;
 
@@ -16,6 +13,13 @@ const signupUser = async (req, res) => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         const idToken = await user.getIdToken();
+
+        const userFolderPath = `${user.uid}/placeholder.txt`;
+        const file = bucket.file(userFolderPath);
+
+        await file.save(Buffer.from(''), {
+            contentType: 'text/plain'
+        });
 
         res.status(201).json({
             idToken,
@@ -26,7 +30,6 @@ const signupUser = async (req, res) => {
     }
 };
 
-// Connexion de l'utilisateur
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
@@ -44,7 +47,6 @@ const loginUser = async (req, res) => {
     }
 };
 
-// Vérification du token d'authentification
 const verifyToken = async (req, res) => {
     const { idToken } = req.body;
 
@@ -56,7 +58,6 @@ const verifyToken = async (req, res) => {
     }
 };
 
-// Suppression de l'utilisateur
 const deleteUser = async (req, res) => {
     const { uid } = req.body;
 

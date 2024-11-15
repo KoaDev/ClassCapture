@@ -1,5 +1,6 @@
 /node_modules/
 /.idea/
-/key.json
-/directed-racer-441009-g6-firebase-adminsdk-c11ay-4c6ff3bb7a.json
-firebaseClient.json
+/bucketKey.json
+/config/firebaseAdmin.json
+config/firebaseClient.json
+/classCapture.json

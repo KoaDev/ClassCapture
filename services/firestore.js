@@ -21,8 +21,7 @@ const getUserTranscriptions = async (userId) => {
             .orderBy('createdAt', 'desc')
             .get();
 
-        const transcriptions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        return transcriptions;
+        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
     } catch (error) {
         console.error("Erreur lors de la récupération des transcriptions : ", error);
         throw error;
