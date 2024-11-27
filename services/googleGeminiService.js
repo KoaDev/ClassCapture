@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const geminiConfig = require('../config/googleGemini/googleGeminiConfig');
+const logger = require("../utils/logger");
 
 class googleGeminiService {
     constructor() {
@@ -18,7 +19,7 @@ class googleGeminiService {
             const result = await this.model.generateContent(prompt);
             return result.response.text();
         } catch (error) {
-            console.error(`Error generating content with Gemini: ${error.message}`);
+            logger.error(`Error generating content with Gemini: ${error.message}`);
             throw new Error('Failed to generate content with Google Gemini API');
         }
     }

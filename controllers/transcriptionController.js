@@ -1,20 +1,29 @@
 const googleGeminiService = require('../services/googleGeminiService');
 const googleBucketService = require('../services/googleBucketService');
 const logger = require("../utils/logger");
+const TranscriptionModel = require("../models/transcriptionModel");
+
+/**
+ * Handles errors and sends a consistent response.
+ * @param {object} res - Express response object.
+ * @param {Error} error - Error object.
+ * @param {string} customMessage - Custom error message for the client.
+ */
+const handleError = (res, error, customMessage) => {
+    logger.error(`${customMessage}: ${error.message}`);
+    res.status(500).json({ error: customMessage });
+};
 
 /**
  * Creates a transcription with contextual information using Gemini AI.
  * Stores the generated transcription in cloud storage.
- * @param {object} req - Express request object.
- * @param {object} res - Express response object.
- * @returns {Promise<void>}
  */
 const createTranscription = async (req, res) => {
     try {
-        const { transcriptionText } = req.body;
+        const { text } = req.body;
 
-        if (!transcriptionText) {
-            return res.status(400).json({ error: 'Missing transcriptionText in request body' });
+        if (!text) {
+            return res.status(400).json({ error: 'Missing text in request body' });
         }
 
         const userId = req.user.uid;
@@ -22,32 +31,36 @@ const createTranscription = async (req, res) => {
         const destinationPath = `TranscriptionWithContext/${userId}/${transcriptionId}.json`;
 
         const generatedText = await googleGeminiService.generateContent(
-            `Voici une transcription speech to text... ${transcriptionText}`
+            `Voici une transcription speech to text... ${text}`
         );
 
         const transcriptionData = {
-            transcriptionText: generatedText,
+            id: transcriptionId,
+            uid: userId,
+            text: generatedText,
             createdAt: new Date().toISOString(),
+            path: destinationPath,
+            metadata: {
+                size: Buffer.byteLength(JSON.stringify(generatedText)),
+                contentType: 'application/json',
+            },
         };
+
+        await TranscriptionModel.validateAsync(transcriptionData);
 
         await googleBucketService.uploadFile(destinationPath, JSON.stringify(transcriptionData));
 
-        return res.status(201).json({
+        res.status(201).json({
             message: 'Transcription created successfully',
-            id: transcriptionId,
-            transcriptionText: generatedText,
+            transcription: transcriptionData,
         });
     } catch (error) {
-        logger.error(`Create Transcription Error: ${error.message}`);
-        return res.status(500).json({ error: 'Failed to create transcription. Please try again later.' });
+        handleError(res, error, 'Failed to create transcription');
     }
 };
 
 /**
  * Retrieves a transcription by its ID.
- * @param {object} req - Express request object.
- * @param {object} res - Express response object.
- * @returns {Promise<void>}
  */
 const getTranscription = async (req, res) => {
     try {
@@ -58,21 +71,19 @@ const getTranscription = async (req, res) => {
         const fileContent = await googleBucketService.getFile(filePath);
         const transcription = JSON.parse(fileContent);
 
-        return res.status(200).json({
-            id,
-            transcriptionText: transcription.transcriptionText,
+        await TranscriptionModel.validateAsync(transcription);
+
+        res.status(200).json({
+            message: 'Transcription retrieved successfully',
+            transcription,
         });
     } catch (error) {
-        logger.error(`Get Transcription Error: ${error.message}`);
-        return res.status(404).json({ error: 'Transcription not found' });
+        handleError(res, error, 'Failed to retrieve transcription');
     }
 };
 
 /**
  * Deletes a transcription by its ID.
- * @param {object} req - Express request object.
- * @param {object} res - Express response object.
- * @returns {Promise<void>}
  */
 const deleteTranscription = async (req, res) => {
     try {
@@ -82,18 +93,14 @@ const deleteTranscription = async (req, res) => {
 
         await googleBucketService.deleteFile(filePath);
 
-        return res.status(200).json({ message: 'Transcription deleted successfully', id });
+        res.status(200).json({ message: 'Transcription deleted successfully', id });
     } catch (error) {
-        logger.error(`Delete Transcription Error: ${error.message}`);
-        return res.status(500).json({ error: 'Failed to delete transcription' });
+        handleError(res, error, 'Failed to delete transcription');
     }
 };
 
 /**
  * Lists all transcriptions for the authenticated user.
- * @param {object} req - Express request object.
- * @param {object} res - Express response object.
- * @returns {Promise<void>}
  */
 const listTranscriptions = async (req, res) => {
     try {
@@ -102,18 +109,32 @@ const listTranscriptions = async (req, res) => {
 
         const files = await googleBucketService.listFiles(prefix);
 
-        const transcriptions = files.map((file) => ({
-            id: file.id,
-            name: file.name,
-        }));
+        const transcriptions = await Promise.all(
+            files.map(async (file) => {
+                if (!file) return null;
 
-        return res.status(200).json({
+                try {
+                    const fileContent = await googleBucketService.getFile(file.path || file.name);
+                    const transcription = JSON.parse(fileContent);
+
+                    await TranscriptionModel.validateAsync(transcription);
+
+                    return transcription;
+                } catch (error) {
+                    logger.warn(`Skipping invalid transcription file: ${file.name}`);
+                    return null;
+                }
+            })
+        );
+
+        const validTranscriptions = transcriptions.filter(Boolean);
+
+        res.status(200).json({
             message: 'Transcriptions retrieved successfully',
-            transcriptions,
+            transcriptions: validTranscriptions,
         });
     } catch (error) {
-        logger.error(`List Transcriptions Error: ${error.message}`);
-        return res.status(500).json({ error: 'Failed to list transcriptions' });
+        handleError(res, error, 'Failed to list transcriptions');
     }
 };
 

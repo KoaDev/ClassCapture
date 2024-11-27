@@ -1,4 +1,6 @@
 const { bucket } = require('../config/googleCloud/googleBucketConfig');
+const logger = require("../utils/logger");
+const TranscriptionModel = require("../models/transcriptionModel");
 
 const googleBucketService = {
     /**
@@ -11,14 +13,17 @@ const googleBucketService = {
      */
     uploadFile: async (destinationPath, content, options = {}) => {
         try {
+            // Valider que le contenu correspond au modèle
+            const data = JSON.parse(content);
+            await TranscriptionModel.validateAsync(data);
+
             const file = bucket.file(destinationPath);
             await file.save(content, {
                 metadata: { contentType: 'application/json' },
                 ...options,
             });
-            console.info(`File uploaded successfully to: ${destinationPath}`);
         } catch (error) {
-            console.error(`Error uploading file to Cloud Storage: ${error.message}`);
+            logger.error(`Error uploading file to Cloud Storage: ${error.message}`);
             throw new Error('Failed to upload file to Cloud Storage.');
         }
     },
@@ -31,19 +36,22 @@ const googleBucketService = {
      */
     getFile: async (filePath) => {
         try {
+            if (!filePath) {
+                throw new Error('File path is required.');
+            }
+
             const file = bucket.file(filePath);
             const [exists] = await file.exists();
 
             if (!exists) {
-                console.warn(`File not found: ${filePath}`);
+                logger.warn(`File not found: ${filePath}`);
                 throw new Error('File not found.');
             }
 
             const [contents] = await file.download();
-            console.info(`File retrieved successfully from: ${filePath}`);
             return contents.toString();
         } catch (error) {
-            console.error(`Error retrieving file from Cloud Storage: ${error.message}`);
+            logger.error(`Error retrieving file from Cloud Storage: ${error.message}`);
             throw new Error('Failed to retrieve file from Cloud Storage.');
         }
     },
@@ -58,9 +66,8 @@ const googleBucketService = {
         try {
             const file = bucket.file(filePath);
             await file.delete();
-            console.info(`File deleted successfully from: ${filePath}`);
         } catch (error) {
-            console.error(`Error deleting file from Cloud Storage: ${error.message}`);
+            logger.error(`Error deleting file from Cloud Storage: ${error.message}`);
             throw new Error('Failed to delete file from Cloud Storage.');
         }
     },
@@ -74,14 +81,34 @@ const googleBucketService = {
     listFiles: async (prefix) => {
         try {
             const [files] = await bucket.getFiles({ prefix });
-            console.info(`Files listed successfully with prefix: ${prefix}`);
 
-            return files.map((file) => ({
-                name: file.name,
-                id: file.name.split('/').pop().replace('.json', ''),
-            }));
+            return await Promise.all(
+                files.map(async (file) => {
+                    // Vérifiez que le fichier a un nom valide
+                    if (!file.name) {
+                        logger.warn(`Skipping file with missing name`);
+                        return null;
+                    }
+
+                    try {
+                        const fileContent = await googleBucketService.getFile(file.name);
+                        const data = JSON.parse(fileContent);
+
+                        // Valider chaque transcription
+                        await TranscriptionModel.validateAsync(data);
+
+                        return {
+                            id: file.name.split('/').pop().replace('.json', ''),
+                            ...data,
+                        };
+                    } catch (error) {
+                        logger.warn(`Skipping invalid transcription file: ${file.name}`);
+                        return null;
+                    }
+                })
+            );
         } catch (error) {
-            console.error(`Error listing files from Cloud Storage: ${error.message}`);
+            logger.error(`Error listing files from Cloud Storage: ${error.message}`);
             throw new Error('Failed to list files from Cloud Storage.');
         }
     },

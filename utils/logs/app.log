@@ -1,1 +1,35 @@
 2024-11-27 11:42:22 [[31merror[39m] [31mLogin Error: Login failed: Firebase: Error (auth/invalid-credential).[39m
+2024-11-27 14:06:36 [[31merror[39m] [31mLogin Error: Login failed: Firebase: Error (auth/network-request-failed).[39m
+2024-11-27 14:41:16 [[31merror[39m] [31mList Transcriptions Error: Unexpected end of JSON input[39m
+2024-11-27 15:34:44 [[31merror[39m] [31mToken verification failed: Firebase ID token has expired. Get a fresh ID token from your client app and try again (auth/id-token-expired). See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.[39m
+2024-11-27 15:45:37 [[31merror[39m] [31mToken verification failed: Decoding Firebase ID token failed. Make sure you passed the entire string JWT which represents an ID token. See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.[39m
+2024-11-27 20:21:40 [[31merror[39m] [31mError listing files from Cloud Storage: this.getFile is not a function[39m
+2024-11-27 20:21:40 [[31merror[39m] [31mList Transcriptions Error: Failed to list files from Cloud Storage.[39m
+2024-11-27 20:22:49 [[31merror[39m] [31mError listing files from Cloud Storage: googleBucketService.getFiles is not a function[39m
+2024-11-27 20:22:49 [[31merror[39m] [31mList Transcriptions Error: Failed to list files from Cloud Storage.[39m
+2024-11-27 20:23:36 [[31merror[39m] [31mError listing files from Cloud Storage: Unexpected end of JSON input[39m
+2024-11-27 20:23:36 [[31merror[39m] [31mList Transcriptions Error: Failed to list files from Cloud Storage.[39m
+2024-11-27 20:24:00 [[31merror[39m] [31mCreate Transcription Error: Cannot read properties of undefined (reading '$_root')[39m
+2024-11-27 20:25:40 [[31merror[39m] [31mCreate Transcription Error: TranscriptionModel is not defined[39m
+2024-11-27 20:26:07 [[31merror[39m] [31mCreate Transcription Error: Cannot read properties of undefined (reading 'validateAsync')[39m
+2024-11-27 20:27:00 [[31merror[39m] [31mCreate Transcription Error: Cannot read properties of undefined (reading 'validateAsync')[39m
+2024-11-27 20:27:24 [[31merror[39m] [31mError uploading file to Cloud Storage: TranscriptionModel is not defined[39m
+2024-11-27 20:27:24 [[31merror[39m] [31mCreate Transcription Error: Failed to upload file to Cloud Storage.[39m
+2024-11-27 20:28:28 [[31merror[39m] [31mError listing files from Cloud Storage: Unexpected end of JSON input[39m
+2024-11-27 20:28:28 [[31merror[39m] [31mList Transcriptions Error: Failed to list files from Cloud Storage.[39m
+2024-11-27 20:30:09 [[31merror[39m] [31mError retrieving file from Cloud Storage: A file name must be specified.[39m
+2024-11-27 20:30:09 [[31merror[39m] [31mList Transcriptions Error: Failed to retrieve file from Cloud Storage.[39m
+2024-11-27 20:41:34 [[31merror[39m] [31mError retrieving file from Cloud Storage: A file name must be specified.[39m
+2024-11-27 20:41:48 [[31merror[39m] [31mError retrieving file from Cloud Storage: File not found.[39m
+2024-11-27 20:41:48 [[31merror[39m] [31mFailed to retrieve transcription: Failed to retrieve file from Cloud Storage.[39m
+2024-11-27 20:43:17 [[31merror[39m] [31mError retrieving file from Cloud Storage: A file name must be specified.[39m
+2024-11-27 20:49:25 [[31merror[39m] [31mError deleting file from Cloud Storage: No such object: directed-racer-441009-g6.firebasestorage.app/TranscriptionWithContext/bzsOPmcymahmWVx3wDF74mqoa7F3/{{transcriptionId}}.json[39m
+2024-11-27 20:49:25 [[31merror[39m] [31mFailed to delete transcription: Failed to delete file from Cloud Storage.[39m
+2024-11-27 20:54:27 [[31merror[39m] [31mFailed to log in user: "uid" is required[39m
+2024-11-27 20:55:11 [[31merror[39m] [31mFailed to sign up user: "uid" is required[39m
+2024-11-27 20:58:10 [[31merror[39m] [31mLogin failed: Firebase: Error (auth/invalid-credential).[39m
+2024-11-27 20:58:10 [[31merror[39m] [31mFailed to log in user: Login failed. Please try again later.[39m
+2024-11-27 20:58:21 [[31merror[39m] [31mFailed to sign up user: "Email" must be a valid email[39m
+2024-11-27 20:58:29 [[31merror[39m] [31mError uploading file to Cloud Storage: Unexpected token 'F', "Folder ini"... is not valid JSON[39m
+2024-11-27 20:58:29 [[31merror[39m] [31mFailed to sign up user: Failed to upload file to Cloud Storage.[39m
+2024-11-27 21:10:17 [[31merror[39m] [31mToken verification failed: Decoding Firebase ID token failed. Make sure you passed the entire string JWT which represents an ID token. See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.[39m

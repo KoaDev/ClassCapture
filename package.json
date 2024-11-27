@@ -15,6 +15,7 @@
     "express": "^4.21.1",
     "firebase": "^11.0.1",
     "firebase-admin": "^12.7.0",
+    "joi": "^17.13.3",
     "logform": "^2.7.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",

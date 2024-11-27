@@ -57,7 +57,7 @@ const setupSwagger = (app) => {
  * @param {express.Application} app - The Express application instance.
  */
 const setupRoutes = (app) => {
-    app.use('/', routes);
+    app.use('/api', routes);
 };
 
 /**

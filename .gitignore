@@ -5,3 +5,4 @@
 config/googleCloud/constants.js
 config/firebase/constants.js
 config/googleGemini/constants.js
+utils/logs/app.log
