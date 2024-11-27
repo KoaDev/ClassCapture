@@ -2,3 +2,6 @@
 /.idea/
 /config/firebase/accountServices/
 /config/googleCloud/accountServices/
+config/googleCloud/constants.js
+config/firebase/constants.js
+config/googleGemini/constants.js
