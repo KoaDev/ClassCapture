@@ -1,82 +1,119 @@
-const {admin} = require('../config/firebaseConfig');
-const db = admin.database();
+const googleGeminiService = require('../services/googleGeminiService');
+const googleBucketService = require('../services/googleBucketService');
+const logger = require("../utils/logger");
 
+/**
+ * Creates a transcription with contextual information using Gemini AI.
+ * Stores the generated transcription in cloud storage.
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @returns {Promise<void>}
+ */
 const createTranscription = async (req, res) => {
     try {
         const { transcriptionText } = req.body;
-        const userId = req.user.uid;
 
-        const userTranscriptionRef = db.ref(`transcriptions/${userId}`);
-
-        const newTranscriptionRef = userTranscriptionRef.push();
-
-        await newTranscriptionRef.set({
-            transcriptionText,
-            createdAt: new Date().toISOString()
-        });
-
-        res.status(201).json({
-            message: 'OK',
-            id: newTranscriptionRef.key,
-            transcriptionText
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Error: ' });
-    }
-};
-
-const getTranscription = async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.uid;
-
-    try {
-        const snapshot = await db.ref(`transcriptions/${userId}/${id}`).once('value');
-        const transcription = snapshot.val();
-
-        if (!transcription) {
-            return res.status(404).json({ error: 'Not found' });
+        if (!transcriptionText) {
+            return res.status(400).json({ error: 'Missing transcriptionText in request body' });
         }
 
-        res.status(200).json({
-            id,
-            transcriptionText: transcription.transcriptionText
+        const userId = req.user.uid;
+        const transcriptionId = `transcription_${Date.now()}`;
+        const destinationPath = `TranscriptionWithContext/${userId}/${transcriptionId}.json`;
+
+        const generatedText = await googleGeminiService.generateContent(
+            `Voici une transcription speech to text... ${transcriptionText}`
+        );
+
+        const transcriptionData = {
+            transcriptionText: generatedText,
+            createdAt: new Date().toISOString(),
+        };
+
+        await googleBucketService.uploadFile(destinationPath, JSON.stringify(transcriptionData));
+
+        return res.status(201).json({
+            message: 'Transcription created successfully',
+            id: transcriptionId,
+            transcriptionText: generatedText,
         });
     } catch (error) {
-        res.status(500).json({ error: 'Error: ' });
+        logger.error(`Create Transcription Error: ${error.message}`);
+        return res.status(500).json({ error: 'Failed to create transcription. Please try again later.' });
     }
 };
 
+/**
+ * Retrieves a transcription by its ID.
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @returns {Promise<void>}
+ */
+const getTranscription = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.uid;
+        const filePath = `TranscriptionWithContext/${userId}/${id}.json`;
+
+        const fileContent = await googleBucketService.getFile(filePath);
+        const transcription = JSON.parse(fileContent);
+
+        return res.status(200).json({
+            id,
+            transcriptionText: transcription.transcriptionText,
+        });
+    } catch (error) {
+        logger.error(`Get Transcription Error: ${error.message}`);
+        return res.status(404).json({ error: 'Transcription not found' });
+    }
+};
+
+/**
+ * Deletes a transcription by its ID.
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @returns {Promise<void>}
+ */
 const deleteTranscription = async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.uid;
-
     try {
-        await db.ref(`transcriptions/${userId}/${id}`).remove();
+        const { id } = req.params;
+        const userId = req.user.uid;
+        const filePath = `TranscriptionWithContext/${userId}/${id}.json`;
 
-        res.status(200).json({
-            message: 'OK',
-            id
-        });
+        await googleBucketService.deleteFile(filePath);
+
+        return res.status(200).json({ message: 'Transcription deleted successfully', id });
     } catch (error) {
-        res.status(500).json({ error: 'Error: ' });
+        logger.error(`Delete Transcription Error: ${error.message}`);
+        return res.status(500).json({ error: 'Failed to delete transcription' });
     }
 };
 
+/**
+ * Lists all transcriptions for the authenticated user.
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @returns {Promise<void>}
+ */
 const listTranscriptions = async (req, res) => {
-    const userId = req.user.uid;
-
     try {
-        const snapshot = await db.ref(`transcriptions/${userId}`).once('value');
-        const transcriptions = snapshot.val() || {};
+        const userId = req.user.uid;
+        const prefix = `TranscriptionWithContext/${userId}/`;
 
-        const formattedTranscriptions = Object.keys(transcriptions).map(id => ({
-            id,
-            ...transcriptions[id]
+        const files = await googleBucketService.listFiles(prefix);
+
+        const transcriptions = files.map((file) => ({
+            id: file.id,
+            name: file.name,
         }));
 
-        res.status(200).json(formattedTranscriptions);
+        return res.status(200).json({
+            message: 'Transcriptions retrieved successfully',
+            transcriptions,
+        });
     } catch (error) {
-        res.status(500).json({ error: 'Error: ' });
+        logger.error(`List Transcriptions Error: ${error.message}`);
+        return res.status(500).json({ error: 'Failed to list transcriptions' });
     }
 };
 
@@ -84,5 +121,5 @@ module.exports = {
     createTranscription,
     getTranscription,
     deleteTranscription,
-    listTranscriptions
+    listTranscriptions,
 };

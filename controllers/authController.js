@@ -1,77 +1,68 @@
-const { bucket } = require('../config/firebaseConfig');
-const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = require('firebase/auth');
-const { initializeApp } = require('firebase/app');
-const firebaseConfig = require("../config/firebaseClient.json");
+const cloudStorageService = require('../services/googleBucketService');
+const logger = require('../utils/logger');
+const firebaseService = require('../services/firebaseService');
 
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-
+/**
+ * Handles user signup.
+ * Creates a new user with Firebase Authentication and initializes user-specific folders in cloud storage.
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @returns {Promise<void>}
+ */
 const signupUser = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        const idToken = await user.getIdToken();
+        if (!email || !password) {
+            logger.warn('Signup failed: Missing email or password', { ip: userIp });
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
 
-        const userFolderPath = `${user.uid}/placeholder.txt`;
-        const file = bucket.file(userFolderPath);
+        const { user, idToken } = await firebaseService.signupUser(email, password);
+        const folderPath = `TranscriptionWithContext/${user.uid}/`;
+        await cloudStorageService.uploadFile(`${folderPath}placeholder.txt`, '');
 
-        await file.save(Buffer.from(''), {
-            contentType: 'text/plain'
-        });
-
-        res.status(201).json({
+        return res.status(201).json({
+            message: 'User created successfully, and folders initialized',
             idToken,
             uid: user.uid,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        logger.error(`Signup Error: ${error.message}`);
+        return res.status(500).json({ error: 'Failed to create user. Please try again later.' });
     }
 };
 
+/**
+ * Handles user login.
+ * Authenticates the user with Firebase Authentication and retrieves a token.
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ * @returns {Promise<void>}
+ */
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        const idToken = await user.getIdToken();
+        if (!email || !password) {
+            logger.warn('Login failed: Missing email or password', { ip: userIp });
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
 
-        res.status(200).json({
+        const { user, idToken } = await firebaseService.loginUser(email, password);
+
+        return res.status(200).json({
+            message: 'Login successful',
             idToken,
             uid: user.uid,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-};
-
-const verifyToken = async (req, res) => {
-    const { idToken } = req.body;
-
-    try {
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        res.status(200).json({ message: 'Token valide', uid: decodedToken.uid });
-    } catch (error) {
-        res.status(401).json({ error: 'Token invalide' });
-    }
-};
-
-const deleteUser = async (req, res) => {
-    const { uid } = req.body;
-
-    try {
-        await admin.auth().deleteUser(uid);
-        res.status(200).json({ message: 'Utilisateur supprimé avec succès' });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
+        logger.error(`Login Error: ${error.message}`);
+        return res.status(401).json({ error: 'Invalid email or password' });
     }
 };
 
 module.exports = {
     signupUser,
     loginUser,
-    verifyToken,
-    deleteUser,
 };

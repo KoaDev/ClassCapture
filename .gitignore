@@ -1,6 +1,4 @@
 /node_modules/
 /.idea/
-/bucketKey.json
-/config/firebaseAdmin.json
-config/firebaseClient.json
-/classCapture.json
+/config/firebase/accountServices/
+/config/googleCloud/accountServices/
